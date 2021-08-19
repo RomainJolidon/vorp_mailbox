@@ -1,0 +1,7 @@
+﻿{
+  "language": "fr", // set your language using name of languages.json files
+  "locations": [
+    [-179, 626, 113] // x, y, z
+  ],
+  "TimeBetweenUsersRefresh": 300 // time spent before server fetch all users another time. In minutes. If value is 0, users are only fetched once at server start and never again
+}

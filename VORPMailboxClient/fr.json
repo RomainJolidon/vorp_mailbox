@@ -1,0 +1,13 @@
+﻿{
+  "TipOnMessageReceived": "Hey toi ! tu as reçu un message de",
+  "TextNearMailboxLocation": "Appuie sur F pour voir tes mails",
+  "UICloseButton": "Fermer",
+  "UIWriteButton": "Ecrire",
+  "UIDeleteButton": "Supprimer",
+  "UIAnswerButton": "Répondre",
+  "UIAbortButton": "Anuler",
+  "UISendButton": "Envoyer",
+  "UINamePrefix": "De",
+  "UITitle": "Boite aux lettres",
+  "UINoMessageReceived": "Aucune lettres reçu"
+}

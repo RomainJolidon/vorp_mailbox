@@ -1,0 +1,16 @@
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\bin\Debug\VORPMailboxClient.dll
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\bin\Debug\VORPMailboxClient.pdb
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\obj\Debug\VORPMailboxClient.csprojAssemblyReference.cache
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\obj\Debug\VORPMailboxClient.csproj.CoreCompileInputs.cache
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\obj\Debug\VORPMailboxClient.csproj.CopyComplete
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\bin\Debug\Config.json
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\bin\Debug\en.json
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\bin\Debug\fr.json
+C:\Users\Emolitt\Documents\MyRedMServer\server-data\resources\[vorp]\vorp_mailbox\Config.json
+C:\Users\Emolitt\Documents\MyRedMServer\server-data\resources\[vorp]\vorp_mailbox\en.json
+C:\Users\Emolitt\Documents\MyRedMServer\server-data\resources\[vorp]\vorp_mailbox\fr.json
+C:\Users\Emolitt\Documents\MyRedMServer\server-data\resources\[vorp]\vorp_mailbox\VORPMailboxClient.net.dll
+C:\Users\Emolitt\Documents\MyRedMServer\server-data\resources\[vorp]\vorp_mailbox\VORPMailboxClient.net.pdb
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\obj\Debug\VORPMailboxClient.net.dll
+C:\Users\Emolitt\source\repos\RedM\VORPMailbox\VORPMailboxClient\obj\Debug\VORPMailboxClient.net.pdb
