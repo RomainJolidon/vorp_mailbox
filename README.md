@@ -8,6 +8,7 @@ A resource for RedM which allows players to send and receive Letters like mails.
 
 - [VORP-Core](https://github.com/VORPCORE/VORP-Core)
 - [VORP-Character](https://github.com/VORPCORE/VORP-Character)
+- [ghmattimysql](https://github.com/GHMatti/ghmattimysql/releases)
 
 **Instructions**
 
