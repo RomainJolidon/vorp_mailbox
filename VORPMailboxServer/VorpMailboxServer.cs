@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using Newtonsoft.Json;
@@ -10,9 +11,8 @@ namespace VORPMailboxServer
     public class VorpMailboxServer: BaseScript
     {
         public static dynamic CORE;
-        // TODO cache au lancement des users
         private List<MailboxUser> _usersCache = new List<MailboxUser>();
-        private int _lastUsersRefresh = 0;
+        private long _lastUsersRefresh = 0;
         
         public VorpMailboxServer()
         {
@@ -21,18 +21,20 @@ namespace VORPMailboxServer
             EventHandlers["mailbox:message:getMessages"] += new Action<Player>(GetMailboxMessages);
             EventHandlers["mailbox:message:updateMessages"] += new Action<Player, dynamic , dynamic>(UpdateMessages);
             EventHandlers["mailbox:message:getUsers"] += new Action<Player>(GetMailboxUsers);
-            
+
             //GetCore Event
             TriggerEvent("getCore",new Action<dynamic>((dic) =>
             {
                 CORE = dic;
             }));
+            
+            RefreshUsersCache();
         }
 
         private void SendNewMessage([FromSource]Player player, dynamic receiver, string message)
         {
             int source = int.Parse(player.Handle);
-            string steam = "steam" + player.Identifiers["steam"];
+            string steam = "steam:" + player.Identifiers["steam"];
             
             
             dynamic sourceCharacter = CORE.getUser(source).getUsedCharacter;
@@ -49,34 +51,74 @@ namespace VORPMailboxServer
                     message
                 });
             
-            dynamic connectedUsers = CORE.getUsers(); // return a Dictionary of <SteamID, User>
             
-            
-            foreach (KeyValuePair<string, dynamic> user in connectedUsers)
+            try
             {
-                // if the steamID does not correspond to the receiver SteamID, skip.
-                if (user.Key != receiver.steam.ToString()) continue;
+                dynamic connectedUsers = CORE.getUsers(); // return a Dictionary of <SteamID, User>
 
-                dynamic receiverCharacter = user.Value.getUsedCharacter;
-
-                // if connected receiver use the right character, send a tip to him
-                if (receiverCharacter.firstname == receiver.firstname &&
-                    receiverCharacter.lastname == receiver.lastname)
+                foreach (KeyValuePair<string, dynamic> user in connectedUsers)
                 {
-                    player.TriggerEvent("mailbox:message:receive", $"{sourceCharacter.firstname} {sourceCharacter.lastname}");
-                    return;
+                    Debug.WriteLine("checking steam key");
+                    // if the steamID does not correspond to the receiver SteamID, skip.
+                    if (user.Key != receiver.steam.ToString()) continue;
+
+                    Debug.WriteLine("getting character");
+
+                    dynamic receiverCharacter = user.Value.getUsedCharacter;
+
+                    Debug.WriteLine("checking character");
+
+                    // if connected receiver use the right character, send a tip to him
+                    if (receiverCharacter.firstname == receiver.firstname &&
+                        receiverCharacter.lastname == receiver.lastname)
+                    {
+                        Debug.WriteLine("sending to client");
+                        Player p = GetPlayer(user.Value.source);
+                        if (p != null)
+                        {
+                            GetPlayer(user.Value.source).TriggerEvent("mailbox:message:receive", $"{sourceCharacter.firstname} {sourceCharacter.lastname}");
+                        }
+                        return;
+                    }
                 }
             }
-            
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+            }
+        }
+        
+        private Player GetPlayer(int handle)
+        {
+            Player p = null;
+
+            try
+            {
+                PlayerList pl = new PlayerList();
+                p = pl[handle];
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[Info] Player Not Found: {ex.Message}");
+                return p;
+            }
+
+            return p;
         }
 
         private void GetMailboxMessages([FromSource]Player player)
         {
-            Debug.WriteLine("Getting mails");
             try
             {
+                int source = int.Parse(player.Handle);
                 string steam = "steam:" + player.Identifiers["steam"];
-                Exports["ghmattimysql"].execute("SELECT * FROM mailbox_mails WHERE receiver_id = ?", new object[] {steam}, new Action<dynamic>(
+                dynamic sourceCharacter = CORE.getUser(source).getUsedCharacter;
+                Exports["ghmattimysql"].execute("SELECT * FROM mailbox_mails WHERE receiver_id = ? AND receiver_firstname = ? AND receiver_lastname = ?", new object[]
+                {
+                    steam,
+                    sourceCharacter.firstname,
+                    sourceCharacter.lastname
+                }, new Action<dynamic>(
                     (userLetters) =>
                     {
                         /*letters: Array<{
@@ -109,7 +151,6 @@ namespace VORPMailboxServer
         
         private void GetMailboxUsers([FromSource]Player player)
         {
-            Debug.WriteLine("Getting users");
             try
             {
                 int resfreshRate = int.Parse(LoadConfig.Config["TimeBetweenUsersRefresh"].ToString()); // In minutes
@@ -124,7 +165,7 @@ namespace VORPMailboxServer
                 {
                     users.Add(JsonConvert.SerializeObject(user));
                 }
-
+                
                 player.TriggerEvent("mailbox:message:setUsers", users);
             }
             catch (Exception e)
@@ -150,6 +191,8 @@ namespace VORPMailboxServer
                         MailboxUser user = new MailboxUser().FromJson(mailboxUser);
                         _usersCache.Add(user);
                     }
+
+                    _lastUsersRefresh = API.GetGameTimer();
                 }));
         }
 
@@ -159,12 +202,12 @@ namespace VORPMailboxServer
             {
                 if (toDelete.Count > 0)
                 {
-                    Exports["ghmattimysql"].execute("DELETE FROM mailbox_mails WHERE id = ?", new object[] {toDelete});
+                    Exports["ghmattimysql"].execute("DELETE FROM mailbox_mails WHERE id IN (?)", new object[] {toDelete});
                 }
 
                 if (toMarkAsOpened.Count > 0)
                 {
-                    Exports["ghmattimysql"].execute("UPDATE mailbox_mails SET opened = true WHERE id = ?;", new object[] {toMarkAsOpened});   
+                    Exports["ghmattimysql"].execute("UPDATE mailbox_mails SET opened = true WHERE id IN (?);", new object[] {toMarkAsOpened});   
                 }
             }
             catch (Exception e)

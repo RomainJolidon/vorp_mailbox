@@ -1,6 +1,6 @@
 ﻿{
   "TipOnMessageReceived": "Hey toi ! tu as reçu un message de",
-  "TextNearMailboxLocation": "Appuie sur F pour voir tes mails",
+  "TextNearMailboxLocation": "Appuie sur $ pour voir tes messages", // don't touch $, it is replaced with curent used key on runtime
   "UICloseButton": "Fermer",
   "UIWriteButton": "Ecrire",
   "UIDeleteButton": "Supprimer",

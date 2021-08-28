@@ -52,8 +52,9 @@ namespace VORPMailboxClient
                 if (!_mailboxOpened && IsNearbyMailbox())
                 {
                     Utils.DisplayText(GetConfig.Langs["TextNearMailboxLocation"]);
-                
-                    if (!_mailboxOpened && IsControlJustReleased(0, 0xB2F377E8)) // f key, see: https://forum.cfx.re/t/keybind-hashes/1666877
+
+                    uint key = GetConfig.Keys[GetConfig.Config["keyToOpen"].ToString()];
+                    if (!_mailboxOpened && IsControlJustReleased(0, key)) // see: https://forum.cfx.re/t/keybind-hashes/1666877
                     {
                         OpenUI();
                         await Delay(300);
@@ -92,22 +93,12 @@ namespace VORPMailboxClient
             return distance < nearDst;
         }
 
-        private void SendToServer(string steam, string receiverFirstname, string receiverLastname, string message)
-        {
-            dynamic receiver = new Dictionary<string, object>() {
-                {"steam", steam},
-                {"firstname", receiverFirstname},
-                {"lastname", receiverLastname},
-            };
-            TriggerServerEvent("mailbox:message:send", new object[]{receiver, message});
-        }
-        
         private void ReceiveMessage(string author)
         {
             try
             {
                 if (author.Length == 0) return;
-                TriggerEvent("vorp:TipRight", $"{GetConfig.Langs["TipOnMessageReceived"]} {author}", 5000);
+                TriggerEvent("vorp:Tip", $"{GetConfig.Langs["TipOnMessageReceived"]} {author}.", 5000);
                 _canRefreshMessages = true;
             }
             catch (Exception e)
@@ -118,10 +109,17 @@ namespace VORPMailboxClient
 
         private void SendMessage(ExpandoObject payload)
         {
-            MailboxUser author = JsonConvert.DeserializeObject<MailboxUser>(((dynamic) payload).author);
-            string message = ((dynamic) payload).message;
-
-            SendToServer(author.steam, author.firstname, author.lastname, message);
+            try
+            {
+                dynamic receiver = ((dynamic) payload).receiver;
+                string message = ((dynamic) payload).message;
+                
+                TriggerServerEvent("mailbox:message:send", new object[]{receiver, message});
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+            }
         }
 
         private void SetMessages(dynamic data)
@@ -148,7 +146,6 @@ namespace VORPMailboxClient
             }
             catch (Exception e)
             {
-                SendChatMessage(e.Message);
                 Debug.WriteLine(e.Message);
             }
         }
@@ -218,7 +215,8 @@ namespace VORPMailboxClient
                 _mailboxOpened = false;
                 
                 // Then parse received messages from UI
-                List<MailboxMessage> messages = JsonConvert.DeserializeObject<List<MailboxMessage>>(((dynamic) payload).messages);
+                List<MailboxMessage> messages = JsonConvert.DeserializeObject<List<MailboxMessage>>(((dynamic) payload).messages.ToString());
+                
 
                 List<string> toDelete = new List<string>();
                 List<string> toMarkAsOpened = new List<string>();
@@ -249,18 +247,8 @@ namespace VORPMailboxClient
             }
             catch (Exception e)
             {
-                SendChatMessage(e.Message);
                 Debug.WriteLine(e.Message);
             }
-        }
-
-        private void SendChatMessage(string message)
-        {
-            TriggerEvent("chat:addMessage", new
-            {
-                color = new[] {0, 255, 0},
-                args = new[] {"[Mailbox]", message}
-            });
         }
     }
 
@@ -276,9 +264,9 @@ namespace VORPMailboxClient
         public MailboxMessage FromJson(dynamic json)
         {
             id = json.id;
-            firstname = json.sender_firstname;
-            lastname = json.sender_lastname;
-            steam = json.sender_id;
+            firstname = json.firstname;
+            lastname = json.lastname;
+            steam = json.steam;
             opened = json.opened;
             message = json.message;
 
