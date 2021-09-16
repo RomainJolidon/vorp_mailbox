@@ -8,10 +8,9 @@ A resource for RedM which allows players to send and receive Letters like mails.
 
 - [VORP-Core](https://github.com/VORPCORE/VORP-Core)
 - [VORP-Character](https://github.com/VORPCORE/VORP-Character)
-- [ghmattimysql](https://github.com/GHMatti/ghmattimysql/releases)
 
 **Instructions**
-- Download the files from the latest version [here](https://github.com/RomainJolidon/vorp_mailbox/releases/latest)
+
 - Extract vorp_mailbox into your resources folder
 - Import mailbox.sql into your database 
 - Add the following line to your server.cfg file:

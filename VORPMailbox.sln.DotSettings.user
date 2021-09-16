@@ -5,6 +5,8 @@
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005CEmolitt_005CDocuments_005CMyRedMServer_005Cserver_002Ddata_005Cresources_005C_005Bvorp_005D_005Cvorp_005Fcore_005Cvorpcore_005Fsv_002Enet_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005CEmolitt_005CDocuments_005CMyRedMServer_005Cserver_002Dfiles_005Ccitizen_005Cclr2_005Clib_005Cmono_005C4_002E5_005CCitizenFX_002ECore_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005CEmolitt_005CDocuments_005CMyRedMServer_005Cserver_002Dfiles_005Ccitizen_005Cclr2_005Clib_005Cmono_005C4_002E5_005CCitizenFX_002ECore_002EServer_002Edll/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005CEmolitt_005Csource_005Crepos_005CRedM_005CVORPMailbox_005Creferences_005CCitizenFX_002ECore_002Edll/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005CEmolitt_005Csource_005Crepos_005CRedM_005CVORPMailbox_005Creferences_005CNewtonsoft_002EJson_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005CEmolitt_005Csource_005Crepos_005CRedM_005CVORPMailbox_005CVORPMailboxClient_005CCitizenFX_002ECore_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/AddReferences/RecentPaths/=C_003A_005CUsers_005CEmolitt_005Csource_005Crepos_005CRedM_005CVORPMailbox_005CVORPMailboxServer_005CCitizenFX_002ECore_002Edll/@EntryIndexedValue">True</s:Boolean>
 	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;

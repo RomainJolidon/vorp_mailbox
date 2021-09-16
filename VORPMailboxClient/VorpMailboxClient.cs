@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using CitizenFX.Core;
-using CitizenFX.Core.Native;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using static CitizenFX.Core.Native.API;
 
 namespace VORPMailboxClient
@@ -22,15 +18,22 @@ namespace VORPMailboxClient
         {
             EventHandlers["onClientResourceStart"] += new Action<string>(OnClientResourceStart);
             EventHandlers["mailbox:message:receive"] += new Action<string>(ReceiveMessage);
+            EventHandlers["mailbox:broadcast:receive"] += new Action<string>(ReceiveBroadcast);
             
             EventHandlers["mailbox:message:setMessages"] += new Action<dynamic>(SetMessages);
             EventHandlers["mailbox:message:setUsers"] += new Action<dynamic>(SetUsers);
+
+            EventHandlers["mailbox:displayCustomMessage"] += new Action<string>(DisplayCustomMessage);
+            EventHandlers["mailbox:displayCustomError"] += new Action<string>(DisplayCustomMessage);
             
             RegisterNuiCallbackType("close");
             EventHandlers["__cfx_nui:close"] += new Action<ExpandoObject>(CloseUI);
             
             RegisterNuiCallbackType("send");
             EventHandlers["__cfx_nui:send"] += new Action<ExpandoObject>(SendMessage);
+            RegisterNuiCallbackType("broadcast");
+            EventHandlers["__cfx_nui:broadcast"] += new Action<ExpandoObject>(BroadcastMessage);
+
         }
         
         
@@ -38,9 +41,8 @@ namespace VORPMailboxClient
         {
             // check if actual initializing resource is our resource. this avoid initializing a resource two times.
             if (GetCurrentResourceName() != resourceName) return;
-
-            Tick += OnTick;
             
+            Tick += OnTick;
         }
 
         [Tick]
@@ -54,9 +56,15 @@ namespace VORPMailboxClient
                     Utils.DisplayText(GetConfig.Langs["TextNearMailboxLocation"]);
 
                     uint key = GetConfig.Keys[GetConfig.Config["keyToOpen"].ToString()];
+                    uint keyBroadcast = GetConfig.Keys[GetConfig.Config["keyToOpenBroadcast"].ToString()];
+                    
                     if (!_mailboxOpened && IsControlJustReleased(0, key)) // see: https://forum.cfx.re/t/keybind-hashes/1666877
                     {
-                        OpenUI();
+                        OpenUI(false);
+                        await Delay(300);
+                    } else if (!_mailboxOpened && IsControlJustReleased(0, keyBroadcast)) // see: https://forum.cfx.re/t/keybind-hashes/1666877
+                    {
+                        OpenUI(true);
                         await Delay(300);
                     }
                 }
@@ -92,14 +100,29 @@ namespace VORPMailboxClient
 
             return distance < nearDst;
         }
+        
+        private void DisplayCustomMessage(string message)
+        {
+            DisplayTip(message, 5000);
+        }
 
         private void ReceiveMessage(string author)
         {
+            DisplayTip($"{GetConfig.Langs["TipOnMessageReceived"]} {author}.", 5000);
+            _canRefreshMessages = true;
+        }
+        
+        private void ReceiveBroadcast(string message)
+        {
+            DisplayTip($"{GetConfig.Langs["TipOnBroadcastReceived"]} {message}", 10000);
+        }
+
+        private void DisplayTip(string message, int time)
+        {
             try
             {
-                if (author.Length == 0) return;
-                TriggerEvent("vorp:Tip", $"{GetConfig.Langs["TipOnMessageReceived"]} {author}.", 5000);
-                _canRefreshMessages = true;
+                if (message.Length == 0) return;
+                TriggerEvent("vorp:Tip", message, time);
             }
             catch (Exception e)
             {
@@ -115,6 +138,20 @@ namespace VORPMailboxClient
                 string message = ((dynamic) payload).message;
                 
                 TriggerServerEvent("mailbox:message:send", new object[]{receiver, message});
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+            }
+        }
+        
+        private void BroadcastMessage(ExpandoObject payload)
+        {
+            try
+            {
+                string message = ((dynamic) payload).message;
+                
+                TriggerServerEvent("mailbox:broadcast:send", message);
             }
             catch (Exception e)
             {
@@ -184,22 +221,26 @@ namespace VORPMailboxClient
             }
         }
         
-        private void OpenUI()
+        private void OpenUI(bool broadcastMode)
         {
             SetUILanguage();
             SetNuiFocus(true, true);
+
             SendNuiMessage(JsonConvert.SerializeObject(new
             {
-                action = "open"
+                action = broadcastMode ? "open_broadcast" : "open"
             }));
             _mailboxOpened = true;
 
-            if (_canRefreshMessages)
+            if (!broadcastMode)
             {
-                TriggerServerEvent("mailbox:message:getMessages");
-            }
+                if (_canRefreshMessages)
+                {
+                    TriggerServerEvent("mailbox:message:getMessages");
+                }
             
-            TriggerServerEvent("mailbox:message:getUsers");
+                TriggerServerEvent("mailbox:message:getUsers");
+            }
         }
 
         private void CloseUI(ExpandoObject payload)
@@ -259,6 +300,7 @@ namespace VORPMailboxClient
         public string firstname;
         public string lastname;
         public bool opened;
+        public DateTime received_at;
         public string message;
         
         public MailboxMessage FromJson(dynamic json)
@@ -268,6 +310,7 @@ namespace VORPMailboxClient
             lastname = json.lastname;
             steam = json.steam;
             opened = json.opened;
+            received_at = json.received_at;
             message = json.message;
 
             return this;

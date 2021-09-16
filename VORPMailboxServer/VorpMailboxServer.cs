@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using CitizenFX.Core;
 using CitizenFX.Core.Native;
 using Newtonsoft.Json;
@@ -12,12 +13,15 @@ namespace VORPMailboxServer
     {
         public static dynamic CORE;
         private List<MailboxUser> _usersCache = new List<MailboxUser>();
+        private Dictionary<string, long> _lastUserMessageSent = new Dictionary<string, long>();
+        private Dictionary<string, long> _lastUserBroadcastSent = new Dictionary<string, long>();
         private long _lastUsersRefresh = 0;
         
         public VorpMailboxServer()
         {
             //Event for send new message
             EventHandlers["mailbox:message:send"] += new Action<Player, dynamic, string>(SendNewMessage);
+            EventHandlers["mailbox:broadcast:send"] += new Action<Player, string>(BroadcastMessage);
             EventHandlers["mailbox:message:getMessages"] += new Action<Player>(GetMailboxMessages);
             EventHandlers["mailbox:message:updateMessages"] += new Action<Player, dynamic , dynamic>(UpdateMessages);
             EventHandlers["mailbox:message:getUsers"] += new Action<Player>(GetMailboxUsers);
@@ -27,6 +31,8 @@ namespace VORPMailboxServer
             {
                 CORE = dic;
             }));
+
+            //Thread.Sleep(2000); // recommended for correct loading
             
             RefreshUsersCache();
         }
@@ -38,7 +44,29 @@ namespace VORPMailboxServer
             
             
             dynamic sourceCharacter = CORE.getUser(source).getUsedCharacter;
-
+            
+            // checking if user is allowed to send a message now
+            int delay = int.Parse(LoadConfig.Config["DelayBetweenTwoMessage"].ToString()); // In seconds
+            
+            if (_lastUserMessageSent.ContainsKey(steam) && _lastUserMessageSent[steam] + 1000 * delay >= API.GetGameTimer())
+            {
+                long remainingTime = ((_lastUserMessageSent[steam] + (1000 * delay)) - API.GetGameTimer()) / 1000;
+                string errorMessage = LoadConfig.Langs["TipOnTooRecentMessageSent"].Replace("$1", remainingTime.ToString());
+                
+                // TriggerServerEvent comme quoi tu dois attendre
+                player.TriggerEvent("mailbox:displayCustomError", errorMessage);
+                return;
+            }
+            
+            // checking if user has enough money
+            int price = int.Parse(LoadConfig.Config["MessageSendPrice"].ToString());
+            
+            if (sourceCharacter.money < price)
+            {
+                player.TriggerEvent("mailbox:displayCustomError", LoadConfig.Langs["TipOnInsufficientMoneyForMessage"]);
+                return;
+            }
+            
             // Insert new message in DB
             Exports["ghmattimysql"].execute("INSERT INTO mailbox_mails SET sender_id = ? , sender_firstname = ?, sender_lastname = ?, receiver_id = ?, receiver_firstname = ?, receiver_lastname = ?, message = ?",
                 new object[] {
@@ -50,35 +78,84 @@ namespace VORPMailboxServer
                     receiver.lastname,
                     message
                 });
-            
-            
+
+            TriggerEvent("vorp:removeMoney", source, 0, price);
+            _lastUserMessageSent[steam] = API.GetGameTimer();
+            player.TriggerEvent("mailbox:displayCustomMessage", LoadConfig.Langs["TipOnMessageSent"]);
             try
             {
                 dynamic connectedUsers = CORE.getUsers(); // return a Dictionary of <SteamID, User>
 
                 foreach (KeyValuePair<string, dynamic> user in connectedUsers)
                 {
-                    Debug.WriteLine("checking steam key");
                     // if the steamID does not correspond to the receiver SteamID, skip.
                     if (user.Key != receiver.steam.ToString()) continue;
 
-                    Debug.WriteLine("getting character");
-
                     dynamic receiverCharacter = user.Value.getUsedCharacter;
-
-                    Debug.WriteLine("checking character");
 
                     // if connected receiver use the right character, send a tip to him
                     if (receiverCharacter.firstname == receiver.firstname &&
                         receiverCharacter.lastname == receiver.lastname)
                     {
-                        Debug.WriteLine("sending to client");
                         Player p = GetPlayer(user.Value.source);
                         if (p != null)
                         {
                             GetPlayer(user.Value.source).TriggerEvent("mailbox:message:receive", $"{sourceCharacter.firstname} {sourceCharacter.lastname}");
                         }
                         return;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e.Message);
+            }
+        }
+        
+        private void BroadcastMessage([FromSource]Player player, string message)
+        {
+            int source = int.Parse(player.Handle);
+            string steam = "steam:" + player.Identifiers["steam"];
+            
+            
+            dynamic sourceCharacter = CORE.getUser(source).getUsedCharacter;
+            
+            // checking if user is allowed to send a message now
+            int delay = int.Parse(LoadConfig.Config["DelayBetweenTwoBroadcast"].ToString()); // In seconds
+            
+            if (_lastUserBroadcastSent.ContainsKey(steam) && _lastUserBroadcastSent[steam] + 1000 * delay >= API.GetGameTimer())
+            {
+                long remainingTime = ((_lastUserBroadcastSent[steam] + (1000 * delay)) - API.GetGameTimer()) / 1000;
+                string errorMessage = LoadConfig.Langs["TipOnTooRecentMessageSent"].Replace("$1", remainingTime.ToString());
+                
+                // TriggerServerEvent comme quoi tu dois attendre
+                player.TriggerEvent("mailbox:displayCustomError", errorMessage);
+                return;
+            }
+            
+            // checking if user has enough money
+            int price = int.Parse(LoadConfig.Config["MessageBroadcastPrice"].ToString());
+            
+            if (sourceCharacter.money < price)
+            {
+                player.TriggerEvent("mailbox:displayCustomError", LoadConfig.Langs["TipOnInsufficientMoneyForBroadcast"]);
+                return;
+            }
+            
+            
+            TriggerEvent("vorp:removeMoney", source, 0, price);
+            _lastUserBroadcastSent[steam] = API.GetGameTimer();
+            player.TriggerEvent("mailbox:displayCustomMessage", LoadConfig.Langs["TipOnBroadcastSent"]);
+            try
+            {
+                dynamic connectedUsers = CORE.getUsers(); // return a Dictionary of <SteamID, User>
+
+                foreach (KeyValuePair<string, dynamic> user in connectedUsers)
+                {
+                    Player p = GetPlayer(user.Value.source);
+                    if (p != null)
+                    {
+                        GetPlayer(user.Value.source).TriggerEvent("mailbox:broadcast:receive", $"{message}");
                     }
                 }
             }
@@ -130,7 +207,8 @@ namespace VORPMailboxServer
                          receiver_firstname,
                          receiver_lastname,
                          message,
-                         opened
+                         opened,
+                         received_at
                          }
                          >*/
                         List<string> messages = new List<string>();
@@ -153,9 +231,9 @@ namespace VORPMailboxServer
         {
             try
             {
-                int resfreshRate = int.Parse(LoadConfig.Config["TimeBetweenUsersRefresh"].ToString()); // In minutes
+                int resfreshRate = int.Parse(LoadConfig.Config["TimeBetweenUsersRefresh"].ToString()); // In seconds
                 
-                if (resfreshRate != 0 && _lastUsersRefresh + 1000 * 60 * resfreshRate < API.GetGameTimer())
+                if (resfreshRate > 0 && _lastUsersRefresh + (1000 * resfreshRate) < API.GetGameTimer())
                 {
                     RefreshUsersCache();
                 }
@@ -191,7 +269,14 @@ namespace VORPMailboxServer
                         MailboxUser user = new MailboxUser().FromJson(mailboxUser);
                         _usersCache.Add(user);
                     }
-
+                    
+                    _usersCache.Sort(delegate(MailboxUser a, MailboxUser b)
+                    {
+                        string aName = $"{a.firstname} {a.lastname}";
+                        string bName = $"{b.firstname} {b.lastname}";
+                        
+                        return aName.CompareTo(bName);
+                    });
                     _lastUsersRefresh = API.GetGameTimer();
                 }));
         }
@@ -224,6 +309,7 @@ namespace VORPMailboxServer
         public string firstname;
         public string lastname;
         public bool opened;
+        public DateTime received_at;
         public string message;
 
         public MailboxMessage FromJson(dynamic json)
@@ -233,6 +319,7 @@ namespace VORPMailboxServer
             lastname = json.sender_lastname;
             steam = json.sender_id;
             opened = json.opened;
+            received_at =  (new DateTime(1970, 1, 1)).AddMilliseconds(json.received_at);
             message = json.message;
 
             return this;

@@ -7,5 +7,6 @@
    receiver_firstname varchar(50),
    receiver_lastname varchar(50),
    message text,
-   opened boolean DEFAULT false
+   opened tinyint(1) DEFAULT 0,
+   received_at datetime DEFAULT now()
 );

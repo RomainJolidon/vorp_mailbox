@@ -24,11 +24,11 @@ namespace VORPMailboxClient
                 }
             }
             
-            foreach(Vector3 pos in GetConfig.Locations)
+            /*foreach(Vector3 pos in GetConfig.Locations)
             {
                 // Display Yellow halo on coords
                 Function.Call((Hash)0x2A32FAA57B937173, -1795314153, pos.X, pos.Y, pos.Z, 0, 0, 0, 0, 0, 0, 1.0, 1.0, 0.9, 255, 255, 0, 155, 0, 0, 2, 0, 0, 0, 0);
-            }
+            }*/
 
             return null;
         }

@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
+using CitizenFX.Core.Native;
 
 namespace VORPMailboxClient
 {
@@ -49,7 +50,7 @@ namespace VORPMailboxClient
         {
             EventHandlers[$"{GetCurrentResourceName()}:SendConfig"] += new Action<string, ExpandoObject>(LoadDefaultConfig);
             TriggerServerEvent($"{GetCurrentResourceName()}:getConfig");
-            
+
         }
 
         private void LoadDefaultConfig(string dc, ExpandoObject dl)
@@ -68,9 +69,6 @@ namespace VORPMailboxClient
                     Langs[l.Key] = l.Value.ToString();
                 }
             }
-            
-            // Add used key is tips near mailboxes
-            Langs["TextNearMailboxLocation"] = Langs["TextNearMailboxLocation"].Replace('$', Config["keyToOpen"].ToString()[0]);
 
 
             dynamic locations = GetConfig.Config["locations"];
@@ -88,6 +86,14 @@ namespace VORPMailboxClient
                 Locations.Add(new Vector3(coords[0].Value<int>() , coords[1].Value<int>(), coords[2].Value<int>()));
             }
             
+            foreach (var location in Locations)
+            {
+                Debug.WriteLine("adding blip on coord");
+                int _blip = Function.Call<int>((Hash)0x554D9D53F696D002, 1664425300, location.X, location.Y, location.Z);
+                Function.Call((Hash)0x74F74D3207ED525C, _blip, 1861010125, 1);
+                Function.Call((Hash)0x9CB1A1623062F402, _blip, "Poste");
+            }
+
             IsLoaded = true;
         }
     }

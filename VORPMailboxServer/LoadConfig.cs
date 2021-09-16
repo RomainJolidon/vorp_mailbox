@@ -36,9 +36,17 @@ namespace VORPMailboxServer
                     string langstring = File.ReadAllText($"{resourcePath}/{Config["language"]}.json", Encoding.UTF8);
                     Langs = JsonConvert.DeserializeObject<Dictionary<string, string>>(langstring);
                     Debug.WriteLine($"{API.GetCurrentResourceName()}: Language {Config["language"]}.json loaded!");
+                    
+                    // Add used key is tips near mailboxes
+                    Langs["TextNearMailboxLocation"] = Langs["TextNearMailboxLocation"].Replace("$1", Config["keyToOpen"].ToString());
+                    Langs["TextNearMailboxLocation"] = Langs["TextNearMailboxLocation"].Replace("$2", Config["keyToOpenBroadcast"].ToString());
+                    
+                    // replace insufficiant money tip
+                    Langs["TipOnInsufficientMoneyForMessage"] = Langs["TipOnInsufficientMoneyForMessage"].Replace("$1", Config["MessageSendPrice"].ToString());
+                    Langs["TipOnInsufficientMoneyForBroadcast"] = Langs["TipOnInsufficientMoneyForBroadcast"].Replace("$1", Config["MessageBroadcastPrice"].ToString());
                 }
                 else
-                {    
+                {  
                     Debug.WriteLine($"{API.GetCurrentResourceName()}: {Config["language"]}.json Not Found");
                 }
             }
