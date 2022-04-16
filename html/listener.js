@@ -232,15 +232,24 @@ function initInteractions() {
 
 	$('#mailbox-button-answer').unbind().click(() => {
 		const selectedLetter = JSON.parse(window.localStorage.getItem('selected_letter'));
-		const index = JSON.parse(window.localStorage.getItem('mailbox_users')).findIndex(user => {
-			return user.steam === selectedLetter.steam && user.firstname === selectedLetter.firstname && user.lastname === selectedLetter.lastname;
-		});
 
-		if (index < 0) {
+		const name = `${selectedLetter.firstname} ${selectedLetter.lastname}`;
+
+		const e = document.getElementById('mailbox-user-select');
+		let optionToSelect = -1;
+
+		for (let i = 0; i < e.options.length; i++) {
+			if (e.options[i].id === name) {
+				optionToSelect = i;
+				break;
+			}
+		}
+
+		if (optionToSelect < 0) {
 			return ;
 		}
 
-		document.getElementById("mailbox-user-select").selectedIndex = (index + 1).toString();
+		document.getElementById("mailbox-user-select").selectedIndex = optionToSelect.toString();
 		navigateToWriteSection();
 	});
 
@@ -255,6 +264,8 @@ function initInteractions() {
 
 		const letters = JSON.parse(window.localStorage.getItem('mailbox_letters'));
 		const remainingLetters = letters.filter(letter => letter.id !== selectedLetter.id);
+
+		console.log(remainingLetters.length);
 
 		if (remainingLetters.length === 0) {
 			createNoMessageDiv();
@@ -315,26 +326,6 @@ window.onload = () => {
 	//init windows
 	navigateToReadSection();
 	showEditButtons(false);
-	initInteractions();
-
-	const users = [
-		{
-			steam: '1',
-			firstname: 'john',
-			lastname: 'doe'
-		},
-		{
-			steam: '2',
-			firstname: 'Marc',
-			lastname: 'LKJ'
-		},
-		{
-			steam: '3',
-			firstname: 'Max',
-			lastname: 'Poli'
-		}
-	];
-	setUsers(users);
 }
 
 window.addEventListener('message', (event) => {
@@ -363,10 +354,10 @@ window.addEventListener('message', (event) => {
 			closeAllLetters();
 			break;
 		case 'set_messages':
-			setMessages(JSON.parse(message.messages).map(msg => JSON.parse(msg)));
+			setMessages(JSON.parse(message.messages));
 			break;
 		case 'set_users':
-			setUsers(JSON.parse(message.users).map(user => JSON.parse(user)));
+			setUsers(JSON.parse(message.users));
 			break;
 		case 'set_language':
 			setLanguage(JSON

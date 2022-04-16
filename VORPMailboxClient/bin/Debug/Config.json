@@ -1,6 +1,0 @@
-﻿{
-  "language": "fr", // set your language using name of languages.json files
-  "locations": [
-    [-179, 626, 114] // x, y, z
-  ]
-}

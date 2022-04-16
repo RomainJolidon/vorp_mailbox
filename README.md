@@ -20,10 +20,9 @@ ensure vorp_mailbox
 
 ## Configuration
 
-You can add new locations of mailbox by amending the locations field in the Config.json file.
-No need to recompile the project, juste restart the resource after updating the Config.
+You can add new locations of mailbox by amending the locations field in the Config.lua file.
 
-You can also change language between french and english by updating the same Config.json file
+You can also change language between french and english by updating the same Config.lua file
 
 
 This resource has been created for Nolosha.
